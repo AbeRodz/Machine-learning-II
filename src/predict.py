@@ -9,6 +9,8 @@ FECHA:
 """
 
 # Imports
+import pickle
+import pandas as pd
 
 class MakePredictionPipeline(object):
     
@@ -22,6 +24,8 @@ class MakePredictionPipeline(object):
         """
         COMPLETAR DOCSTRING
         """
+        print(self.input_path)
+        data = pd.read_csv(self.input_path + 'test_final.csv',index_col=0)
 
         return data
 
@@ -29,26 +33,27 @@ class MakePredictionPipeline(object):
         """
         COMPLETAR DOCSTRING
         """    
-        self.model = load_model(self.model_path) # Esta función es genérica, utilizar la función correcta de la biblioteca correspondiente
+        self.model = pickle.load(open(self.model_path+"model.sav",'rb')) # Esta función es genérica, utilizar la función correcta de la biblioteca correspondiente
         
         return None
 
 
-    def make_predictions(self, data: DataFrame) -> pd.DataFrame:
+    def make_predictions(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         COMPLETAR DOCSTRING
         """
-   
+        #print(data.head())
         new_data = self.model.predict(data)
+    
+        return pd.DataFrame(new_data)
 
-        return new_data
 
-
-    def write_predictions(self, predicted_data: DataFrame) -> None:
+    def write_predictions(self, predicted_data: pd.DataFrame) -> None:
         """
         COMPLETAR DOCSTRING
         """
-
+        print(predicted_data)
+        predicted_data.to_csv(self.output_path+'data_test.csv')
         return None
 
 
@@ -62,9 +67,9 @@ class MakePredictionPipeline(object):
 
 if __name__ == "__main__":
     
-    spark = Spark()
+    #spark = Spark()
     
-    pipeline = MakePredictionPipeline(input_path = 'Ruta/De/Donde/Voy/A/Leer/Mis/Datos',
-                                      output_path = 'Ruta/Donde/Voy/A/Escribir/Mis/Datos',
-                                      model_path = 'Ruta/De/Donde/Voy/A/Leer/Mi/Modelo')
+    pipeline = MakePredictionPipeline(input_path = '../data/output/',
+                                      output_path = '../model/output/',
+                                      model_path = '../model/')
     pipeline.run()  
