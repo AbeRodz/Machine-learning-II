@@ -31,17 +31,17 @@ class FeatureEngineeringPipeline():
         write on disk the transformed dataset.
 
         :param input_path : input directory path
-        :type path : string
+        :type input_path : string
 
         :param output_path : output directory path
-        :type path : string
+        :type output_path : string
 
         """
         self.input_path = input_path
         self.output_path = output_path
 
     @staticmethod
-    def generic_reader(path: str) -> pd.DataFrame:
+    def generic_reader(path: str, **args) -> pd.DataFrame:
         """
         Generic function that handles reading parquet, csv, and json files
         returns a DataFrame.
@@ -52,7 +52,7 @@ class FeatureEngineeringPipeline():
         :return type : pd.DataFrame
 
         """
-
+        print(args)
         format_type = path.split('.')[-1]
         try:
             func = getattr(pd, f'read_{format_type}')
@@ -61,8 +61,11 @@ class FeatureEngineeringPipeline():
                 return func(path, engine)
 
             if format_type == 'csv':
+                if len(args) != 0:
+                    return func(path, index_col = args['index_col'])
+                
                 return func(path)
-
+            
             if format_type == 'json':
                 return func(path, lines=True)
         except Exception as err:
