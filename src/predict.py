@@ -13,8 +13,7 @@ FECHA: 24/5/2023
 import logging
 import pickle
 import pandas as pd
-
-from feature_engineering import FeatureEngineeringPipeline
+from utils import generic_reader
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +21,7 @@ logging.basicConfig(
     datefmt='%H:%M:%S')
 
 
-class MakePredictionPipeline(FeatureEngineeringPipeline):
+class MakePredictionPipeline():
     """
     Class to perform model inference onto a dataset.
 
@@ -51,7 +50,7 @@ class MakePredictionPipeline(FeatureEngineeringPipeline):
         COMPLETAR DOCSTRING
         """
 
-        data = self.generic_reader(self.input_path + 'test_final.csv', index_col=[0])
+        data = generic_reader(self.input_path + 'test_final.csv', index_col=[0])
         # data = pd.read_csv(self.input_path + 'test_final.csv',index_col=0)
 
         return data
@@ -62,7 +61,7 @@ class MakePredictionPipeline(FeatureEngineeringPipeline):
 
         """
 
-        with open(self.model_path +"model.sav",'rb') as saved_model:
+        with open(self.model_path +"model.pkl",'rb') as saved_model:
             self.model = pickle.load(saved_model)
 
     def make_predictions(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -76,8 +75,8 @@ class MakePredictionPipeline(FeatureEngineeringPipeline):
         """
 
         predictions = self.model.predict(data)
-
-        return pd.DataFrame(predictions)
+        data['pred_Sales'] = predictions
+        return pd.DataFrame(data)
 
     def write_predictions(self, predicted_data: pd.DataFrame) -> None:
         """
@@ -87,8 +86,8 @@ class MakePredictionPipeline(FeatureEngineeringPipeline):
         :type predicted_data : pd.DataFrame
 
         """
-        print(predicted_data)
-        predicted_data.to_csv(self.output_path + 'data_test.csv')
+        
+        predicted_data.to_csv(self.output_path + 'predictions.csv')
 
     def run(self):
         """
@@ -99,7 +98,7 @@ class MakePredictionPipeline(FeatureEngineeringPipeline):
         logging.info('Reading data...')
 
         data = self.load_data()
-        print(data.head())
+ 
         logging.info('Loading model...')
 
         self.load_model()
@@ -110,7 +109,7 @@ class MakePredictionPipeline(FeatureEngineeringPipeline):
 
         logging.info('Writing data...')
         self.write_predictions(df_preds)
-
+        logging.info('Process Finished')
 
 if __name__ == "__main__":
 
