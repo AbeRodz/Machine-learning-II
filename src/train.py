@@ -9,111 +9,161 @@ FECHA:
 """
 
 # Imports
+import logging
+import os
+import pickle
 import pandas as pd
-from sklearn.model_selection import train_test_split, cross_validate, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from sklearn.linear_model import LinearRegression
-import logging
 
-from feature_engineering import FeatureEngineeringPipeline
 
 logging.basicConfig(
-    level=logging.INFO, 
-     format= '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
-     datefmt='%H:%M:%S')
+    level=logging.INFO,
+    format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S')
 
-class ModelTrainingPipeline(object):
+
+class ModelTrainingPipeline():
+    """
+    Class to perform model training using a dataset.
+
+    """
 
     def __init__(self, input_path, model_path):
-        
+        """
+        Class constructor, takes the input path (files to read), and the output path, to
+        write on disk the transformed dataset.
+
+        :param input_path : input directory path
+        :type input_path : string
+
+        :param output_path : output directory path
+        :type output_path : string
+        """
         self.input_path = input_path
         self.model_path = model_path
 
     def read_data(self) -> pd.DataFrame:
-        import os
-        """
-        COMPLETAR DOCSTRING 
-        
-        :return pandas_df: The desired DataLake table as a DataFrame
-        :rtype: pd.DataFrame
-        """
-            
-        # COMPLETAR CON CÓDIGO
-        items  = os.listdir(self.input_path)
-
-        for dataset in items:
-            if dataset.lower().startswith('test') :
-                test_path = dataset
-            if  dataset.lower().startswith('train'):
-                train_path = dataset
-
-        data_train = pd.read_csv( self.input_path + train_path,index_col=0)
-        #data_test = pd.read_csv( self.input_path +test_path)
-        # Identificando la data de train y de test, para posteriormente unión y separación
-        #pandas_df = pd.concat([data_train], ignore_index=True, sort=False)
-        return data_train
-
-    
-    def model_training(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         COMPLETAR DOCSTRING
-        
+
+        :return pandas_df The desired DataLake table as a DataFrame
+        :rtype: pd.DataFrame
         """
-        
+
         # COMPLETAR CON CÓDIGO
+        items = os.listdir(self.input_path)
+
+        for dataset in items:
+            # if dataset.lower().startswith('test'):
+            #     test_path = dataset
+            if dataset.lower().startswith('train'):
+                train_path = dataset
+
+        data_train = pd.read_csv(self.input_path + train_path, index_col=0)
+        # data_test = pd.read_csv( self.input_path +test_path)
+        # Identificando la data de train y de test, para posteriormente unión y separación
+        # pandas_df = pd.concat([data_train], ignore_index=True, sort=False)
+        return data_train
+
+    def model_training(self, data_frame: pd.DataFrame) -> pd.DataFrame:
+        """
+        Performs model training with a selected dataset, and creates
+        a new dataframe with predicted values
+
+        :param data_frame : Target DataFrame
+        :type data_frame : pd.DataFrame
+
+        :return type : pd.DataFrame
+        """
         seed = 28
         model = LinearRegression()
-        print(df.isna().sum())
+
         # División de dataset de entrenaimento y validación
-        X = df.drop(columns='Item_Outlet_Sales') #[['Item_Weight', 'Item_MRP', 'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type']] # .drop(columns='Item_Outlet_Sales')
-        x_train, x_val, y_train, y_val = train_test_split(X, df['Item_Outlet_Sales'], test_size = 0.3, random_state=seed)
-            
+
+        x_data = data_frame.drop(columns='Item_Outlet_Sales')
+        x_train, x_val, y_train, y_val = train_test_split(
+            x_data, data_frame['Item_Outlet_Sales'], test_size=0.3, random_state=seed)
+
         # Entrenamiento del modelo
-        model.fit(x_train,y_train)
+        model.fit(x_train, y_train)
 
         # Predicción del modelo ajustado para el conjunto de validación
         pred = model.predict(x_val)
 
-        # Cálculo de los errores cuadráticos medios y Coeficiente de Determinación (R^2)
+        # Cálculo de los errores cuadráticos medios y Coeficiente de
+        # Determinación (R^2)
         mse_train = metrics.mean_squared_error(y_train, model.predict(x_train))
-        R2_train = model.score(x_train, y_train)
-        logging.info('Métricas del Modelo:')
-        logging.info('ENTRENAMIENTO: RMSE: {:.2f} - R2: {:.4f}'.format(mse_train**0.5, R2_train))
+        r2_train = model.score(x_train, y_train)
+        logging.info('Model Metrics:')
+        logging.info('TRAINING: RMSE: %f - R2: %f', mse_train**0.5 ,r2_train)
 
         mse_val = metrics.mean_squared_error(y_val, pred)
-        R2_val = model.score(x_val, y_val)
-        logging.info('VALIDACIÓN: RMSE: {:.2f} - R2: {:.4f}'.format(mse_val**0.5, R2_val))
+        r2_val = model.score(x_val, y_val)
+        logging.info('VALIDATION: RMSE: %f - R2: %f' ,mse_val**0.5  ,r2_val)
 
-        logging.info('\nCoeficientes del Modelo:')
+        logging.info('\n Model Coefficients:')
         # Constante del modelo
-        logging.info('Intersección: {:.2f}'.format(model.intercept_))
+        logging.info('\nIntersection: %s', model.intercept_)
 
         # Coeficientes del modelo
         coef = pd.DataFrame(x_train.columns, columns=['features'])
-        coef['Coeficiente Estimados'] = model.coef_
-        logging.info(coef)
-        #coef.sort_values(by='Coeficiente Estimados').set_index('features').plot(kind='bar', title='Importancia de las variables', figsize=(12, 6))
+        coef['Estimated Coefficients'] = model.coef_
+        logging.info('\n %s' ,coef)
+
 
         return model
 
-    def model_dump(self, model_trained) -> None:
-        import pickle
+    def model_dump(self, model_trained: LinearRegression) -> None:
         """
-        COMPLETAR DOCSTRING
-        
+        Dumps the model onto a .pkl file into the directory declared on model_path
+        :param model_trained : trained model.
+        :type : LinearRegression
+
         """
-        
-        # COMPLETAR CON CÓDIGO
-        pickle.dump(model_trained,open(self.model_path+'model.sav','wb'))
-        return None
+        with open(self.model_path + 'model.pkl', 'wb') as model:
+            pickle.dump(model_trained, model)
 
     def run(self):
-    
-        df = self.read_data()
-        model_trained = self.model_training(df)
+        """
+        Executes the training pipeline, performs data reading, training
+        and writes onto disk the trained model.
+        """
+
+        logging.info('Reading data...')
+        data_frame = self.read_data()
+
+        logging.info('Training model...')
+        model_trained = self.model_training(data_frame)
+
+        logging.info('Exporting model...')
         self.model_dump(model_trained)
+        logging.info('Model saved on %s directory',self.model_path)
+
 
 if __name__ == "__main__":
+    import argparse
 
-    ModelTrainingPipeline(input_path = '../data/output/',
-                          model_path = '../model/').run()
+    parser = argparse.ArgumentParser(
+        description="Script that executes data cleaning and transformation,\
+          generates training and test datasets onto the specified output path")
+
+    parser.add_argument(
+        "-i",
+        "--input_path",
+        type=str,
+        help="input file path",
+        required=True
+    )
+    parser.add_argument(
+        "-o",
+        "--output_path",
+        type=str,
+        help="output file path",
+        required=False
+    )
+
+    args = parser.parse_args()
+    ModelTrainingPipeline(input_path='../data/output/',
+                          model_path='../model/').run()
