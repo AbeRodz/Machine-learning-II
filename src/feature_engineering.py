@@ -12,6 +12,8 @@ FECHA: 24/5/2023
 import os
 import logging
 import pandas as pd
+import numpy as np
+from helpers.utils import generic_reader
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,39 +39,10 @@ class FeatureEngineeringPipeline():
         :type output_path : string
 
         """
-        self.input_path = input_path
-        self.output_path = output_path
+        self.input_path = input_path.strip()
+        self.output_path = output_path.strip()
 
-    @staticmethod
-    def generic_reader(path: str, **args) -> pd.DataFrame:
-        """
-        Generic function that handles reading parquet, csv, and json files
-        returns a DataFrame.
 
-        :param path : filepath
-        :type path : string
-
-        :return type : pd.DataFrame
-
-        """
-        print(args)
-        format_type = path.split('.')[-1]
-        try:
-            func = getattr(pd, f'read_{format_type}')
-            if format_type == 'parquet':
-                engine = 'auto'
-                return func(path, engine)
-
-            if format_type == 'csv':
-                if len(args) != 0:
-                    return func(path, index_col = args['index_col'])
-                
-                return func(path)
-            
-            if format_type == 'json':
-                return func(path, lines=True)
-        except Exception as err:
-            raise TypeError("format not handled") from err
 
     def read_data(self) -> pd.DataFrame | None:
         """
@@ -79,7 +52,7 @@ class FeatureEngineeringPipeline():
         :return type: pd.DataFrame
 
         """
-
+        
         items = os.listdir(self.input_path)
 
         for dataset in items:
@@ -92,9 +65,9 @@ class FeatureEngineeringPipeline():
                 logging.error(err)
                 return None
         try:
-            data_train = self.generic_reader(self.input_path + train_path)
+            data_train = generic_reader(self.input_path + train_path)
 
-            data_test = self.generic_reader(self.input_path + test_path)
+            data_test = generic_reader(self.input_path + test_path)
 
             data_train['Set'] = 'train'
             data_test['Set'] = 'test'
@@ -176,7 +149,7 @@ class FeatureEngineeringPipeline():
         Performs data cleaning and feature engineering on the dataset.
 
         :param data_frame : Target DataFrame
-        :type path : pd.DataFrame
+        :type data_frame : pd.DataFrame
 
         :return type : pd.DataFrame
         """
@@ -232,7 +205,7 @@ class FeatureEngineeringPipeline():
         dataframe['Outlet_Location_Type'] = dataframe['Outlet_Location_Type'].replace(
             {'Tier 1': 2, 'Tier 2': 1, 'Tier 3': 0})
         # feature
-        df_transformed = pd.get_dummies(dataframe, columns=['Outlet_Type'])
+        df_transformed = pd.get_dummies(dataframe, columns=['Outlet_Type'], dtype=np.uint8)
 
         return df_transformed
 
@@ -277,7 +250,7 @@ class FeatureEngineeringPipeline():
         logging.info('Writing data...')
 
         self.write_prepared_data(df_transformed)
-
+      
         logging.info('Process finished')
 
 
@@ -301,11 +274,11 @@ if __name__ == "__main__":
         "--output_path",
         type=str,
         help="output file path",
+        default= '../data/output',
         required=False
     )
 
     args = parser.parse_args()
-    if args.output_path is None:
-        args.output_path = "../data/output/"
+    
     FeatureEngineeringPipeline(input_path=args.input_path,
                                output_path=args.output_path).run()
