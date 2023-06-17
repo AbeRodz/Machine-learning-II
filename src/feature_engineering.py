@@ -13,7 +13,7 @@ import os
 import logging
 import pandas as pd
 import numpy as np
-from helpers.utils import generic_reader
+from helpers.utils import generic_reader, generic_file_saver
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +27,7 @@ class FeatureEngineeringPipeline():
 
     """
 
-    def __init__(self, input_path: str, output_path: str) -> None:
+    def __init__(self, input_path: str, output_path: str, file_type: str) -> None:
         """
         Class constructor, takes the input path (files to read), and the output path, to
         write on disk the transformed dataset.
@@ -41,6 +41,7 @@ class FeatureEngineeringPipeline():
         """
         self.input_path = input_path.strip()
         self.output_path = output_path.strip()
+        self.file_type = file_type
 
 
 
@@ -52,32 +53,34 @@ class FeatureEngineeringPipeline():
         :return type: pd.DataFrame
 
         """
-        
-        items = os.listdir(self.input_path)
+        try:
+            items = os.listdir(self.input_path)
 
-        for dataset in items:
+            for dataset in items:
+                try:
+                    if dataset.lower().startswith('test'):
+                        test_path = dataset
+                    if dataset.lower().startswith('train'):
+                        train_path = dataset
+                except LookupError("couldn't find test and train files") as err:
+                    logging.error(err)
+                    return None
             try:
-                if dataset.lower().startswith('test'):
-                    test_path = dataset
-                if dataset.lower().startswith('train'):
-                    train_path = dataset
-            except LookupError("couldn't find test and train files") as err:
+                data_train = generic_reader(self.input_path + train_path)
+
+                data_test = generic_reader(self.input_path + test_path)
+
+                data_train['Set'] = 'train'
+                data_test['Set'] = 'test'
+                pandas_df = pd.concat([data_train, data_test],
+                                    ignore_index=True, sort=False)
+                return pandas_df
+            except TypeError as err:
                 logging.error(err)
                 return None
-        try:
-            data_train = generic_reader(self.input_path + train_path)
-
-            data_test = generic_reader(self.input_path + test_path)
-
-            data_train['Set'] = 'train'
-            data_test['Set'] = 'test'
-            pandas_df = pd.concat([data_train, data_test],
-                                  ignore_index=True, sort=False)
-            return pandas_df
-        except TypeError as err:
-            logging.error(err)
-            return None
-
+        except Exception as err:
+            
+            return generic_reader(self.input_path)
     @staticmethod
     def replace_column_with_value(data_frame: pd.DataFrame,
                                   column: str,
@@ -190,9 +193,17 @@ class FeatureEngineeringPipeline():
         data_frame.loc[data_frame['Item_Type'] == 'Non perishable',
                        'Item_Fat_Content'] = 'NA'
         # feature
-        data_frame['Item_MRP'] = pd.qcut(
-            data_frame['Item_MRP'], 4, labels=[1, 2, 3, 4])
-
+        try:
+            data_frame['Item_MRP'] = pd.qcut(
+                data_frame['Item_MRP'], 4, labels=[1, 2, 3, 4], duplicates= 'drop')
+        except:
+            quantiles = [(31.288999999999998, 94.012) , (94.012, 142.247) , (142.247, 185.856), (185.856, 266.888)]
+            for i in range(len(quantiles)):
+             
+                if data_frame['Item_MRP'].values < quantiles[i][1]:
+                    data_frame['Item_MRP'] = i + 1
+                    break
+            pass
         dataframe = data_frame.drop(
             columns=[
                 'Item_Type',
@@ -221,15 +232,18 @@ class FeatureEngineeringPipeline():
 
         dataset = transformed_dataframe.drop(
             columns=['Item_Identifier', 'Outlet_Identifier'])
+        try:
+            df_train = dataset.loc[dataset['Set'] == 'train']
+            df_test = dataset.loc[dataset['Set'] == 'test']
 
-        df_train = dataset.loc[dataset['Set'] == 'train']
-        df_test = dataset.loc[dataset['Set'] == 'test']
-
-        df_train = df_train.drop(['Set'], axis=1)
-        df_test = df_test.drop(['Item_Outlet_Sales', 'Set'], axis=1)
-
-        df_train.to_csv(self.output_path + "/train_final.csv")
-        df_test.to_csv(self.output_path + "/test_final.csv")
+            df_train = df_train.drop(['Set'], axis=1)
+            df_test = df_test.drop(['Item_Outlet_Sales', 'Set'], axis=1)
+            
+            generic_file_saver(df_train, self.file_type, self.output_path + f'train_final.{self.file_type}')
+            generic_file_saver(df_test, self.file_type, self.output_path + f'test_final.{self.file_type}')
+        except Exception as err:
+            
+            generic_file_saver(dataset, self.file_type, self.output_path + f'_example.{self.file_type}')
 
     def run(self):
         """
@@ -274,11 +288,24 @@ if __name__ == "__main__":
         "--output_path",
         type=str,
         help="output file path",
-        default= '../data/output',
+        default= '../data/output/',
+        required=False
+    )
+
+    parser.add_argument(
+        "-t",
+        "--file_type",
+        type=str,
+        help="output file type",
+        default= 'csv',
         required=False
     )
 
     args = parser.parse_args()
     
     FeatureEngineeringPipeline(input_path=args.input_path,
-                               output_path=args.output_path).run()
+                               output_path=args.output_path,
+                               file_type = args.file_type
+                               ).run()
+
+#python feature_engineering.py -i ../data/ -o ../data/output/feature_engineering

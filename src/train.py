@@ -161,3 +161,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     ModelTrainingPipeline(input_path='../data/output/',
                           model_path='../model/').run()
+
+#python train.py -i ../data/output/ -o ../model/        
