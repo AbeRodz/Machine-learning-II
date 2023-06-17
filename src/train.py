@@ -1,11 +1,12 @@
 """
 train.py
 
-COMPLETAR DOCSTRING
+For executing the standalone script run :
+    python train.py -i ../data/output/ -o ../model/
 
-DESCRIPCIÓN:
-AUTOR:
-FECHA:
+DESCRIPCIÓN: Script para entrenar el modelo.
+AUTOR: Abraham Rodriguez
+FECHA: 17/06/2023
 """
 
 # Imports
@@ -46,25 +47,20 @@ class ModelTrainingPipeline():
 
     def read_data(self) -> pd.DataFrame:
         """
-        COMPLETAR DOCSTRING
+        Reads data from the specified input_path.
 
-        :return pandas_df The desired DataLake table as a DataFrame
+        :return Dataframe
         :rtype: pd.DataFrame
         """
 
-        # COMPLETAR CON CÓDIGO
         items = os.listdir(self.input_path)
 
         for dataset in items:
-            # if dataset.lower().startswith('test'):
-            #     test_path = dataset
             if dataset.lower().startswith('train'):
                 train_path = dataset
 
         data_train = pd.read_csv(self.input_path + train_path, index_col=0)
-        # data_test = pd.read_csv( self.input_path +test_path)
-        # Identificando la data de train y de test, para posteriormente unión y separación
-        # pandas_df = pd.concat([data_train], ignore_index=True, sort=False)
+
         return data_train
 
     def model_training(self, data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -146,8 +142,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Script that executes data cleaning and transformation,\
-          generates training and test datasets onto the specified output path")
+    description="Script that executes model training,and saves it onto the specified output path")
 
     parser.add_argument(
         "-i",
@@ -167,3 +162,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     ModelTrainingPipeline(input_path='../data/output/',
                           model_path='../model/').run()
+    

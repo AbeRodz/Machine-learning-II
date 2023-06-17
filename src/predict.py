@@ -13,7 +13,7 @@ FECHA: 24/5/2023
 import logging
 import pickle
 import pandas as pd
-from utils import generic_reader
+from helpers import generic_reader
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,7 +26,7 @@ class MakePredictionPipeline():
     Class to perform model inference onto a dataset.
 
     """
-    def __init__(self, input_path, output_path, model_path: str = None):
+    def __init__(self, input_path : str, output_path : str, model_path: str = None):
         """
         Class constructor, takes the input path (files to read), and the output path, to
         write on disk the model predicions, uses a pre-saved model.
@@ -36,7 +36,7 @@ class MakePredictionPipeline():
 
         :param output_path : output directory path
         :type output_path : string
-        
+
         :param model_path :  saved model path
         :type model_path : string
         """
@@ -50,10 +50,21 @@ class MakePredictionPipeline():
         COMPLETAR DOCSTRING
         """
 
-        data = generic_reader(self.input_path + 'test_final.csv', index_col=[0])
-        # data = pd.read_csv(self.input_path + 'test_final.csv',index_col=0)
 
-        return data
+        feature_columns = ['Item_Weight', 'Item_Visibility', 'Item_MRP',
+       'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type',
+       'Outlet_Type_Grocery Store', 'Outlet_Type_Supermarket Type1',
+       'Outlet_Type_Supermarket Type2', 'Outlet_Type_Supermarket Type3']
+
+        data = generic_reader(self.input_path, index_col=[0])
+
+        for col in feature_columns:
+            if col not in data.columns:
+                data[col] = 0
+            else:
+                pass
+
+        return data.reindex(columns=feature_columns)
 
     def load_model(self) -> None:
         """
@@ -86,7 +97,7 @@ class MakePredictionPipeline():
         :type predicted_data : pd.DataFrame
 
         """
-        
+
         predicted_data.to_csv(self.output_path + 'predictions.csv')
 
     def run(self):
@@ -98,7 +109,7 @@ class MakePredictionPipeline():
         logging.info('Reading data...')
 
         data = self.load_data()
- 
+
         logging.info('Loading model...')
 
         self.load_model()
@@ -109,6 +120,8 @@ class MakePredictionPipeline():
 
         logging.info('Writing data...')
         self.write_predictions(df_preds)
+
+        logging.info('predictions written on %s', self.output_path)
         logging.info('Process Finished')
 
 if __name__ == "__main__":
@@ -146,7 +159,9 @@ if __name__ == "__main__":
     # pipeline = MakePredictionPipeline(input_path = '../data/output/',
     #                                   output_path = '../model/output/',
     #                                   model_path = '../model/')
-    pipeline = MakePredictionPipeline(input_path=args.input_path,
-                                      output_path=args.output_path,
-                                      model_path=args.model_path)
+    pipeline = MakePredictionPipeline(input_path=args.input_path.strip(),
+                                      output_path=args.output_path.strip(),
+                                      model_path=args.model_path.strip())
     pipeline.run()
+
+#python predict.py -i ../data/output/test_final.csv  -o ../model/output/ -m ../model/
