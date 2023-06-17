@@ -24,6 +24,34 @@ flowchart
    features --> predict.py --> predictions
    end
 ```
+
+# Installing dependicies
+
+First setup a virtual environment by executing:
+
+```console 
+virtualenv venv
+```
+
+Activate the venv by using:
+
+windows
+```console
+venv\Scripts\activate 
+```
+
+Linux/MacOS
+``` console
+source venv\bin\activate
+```
+
+Then install packages using pip:
+
+``` console
+(venv) pip install -r requirements.txt
+```
+
+
 # Training pipeline
 
 To run the training pipeline, just execute the following in the terminal
