@@ -36,7 +36,7 @@ class MakePredictionPipeline():
 
         :param output_path : output directory path
         :type output_path : string
-        
+
         :param model_path :  saved model path
         :type model_path : string
         """
@@ -55,7 +55,7 @@ class MakePredictionPipeline():
        'Outlet_Establishment_Year', 'Outlet_Size', 'Outlet_Location_Type',
        'Outlet_Type_Grocery Store', 'Outlet_Type_Supermarket Type1',
        'Outlet_Type_Supermarket Type2', 'Outlet_Type_Supermarket Type3']
-    
+
         data = generic_reader(self.input_path, index_col=[0])
 
         for col in feature_columns:
@@ -97,7 +97,7 @@ class MakePredictionPipeline():
         :type predicted_data : pd.DataFrame
 
         """
-        
+
         predicted_data.to_csv(self.output_path + 'predictions.csv')
 
     def run(self):
@@ -109,7 +109,7 @@ class MakePredictionPipeline():
         logging.info('Reading data...')
 
         data = self.load_data()
- 
+
         logging.info('Loading model...')
 
         self.load_model()
@@ -120,7 +120,7 @@ class MakePredictionPipeline():
 
         logging.info('Writing data...')
         self.write_predictions(df_preds)
-     
+
         logging.info('predictions written on %s', self.output_path)
         logging.info('Process Finished')
 

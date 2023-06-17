@@ -32,6 +32,20 @@ def generic_reader(path: str, **args) -> pd.DataFrame:
         raise TypeError("format not handled") from err
     
 def generic_file_saver(data_frame : pd.DataFrame , file_type : str, file_path : str):
+    """
+    Generic function that handles writing files supported by pandas.
+
+    :param data_frame : targe dataFrame
+    :type data_frame : pd.DatraFrame
+    
+
+    :param file_type : file_type to save
+    :type file_type : string
+
+    :param file_path : filepath
+    :type file_path : string
+
+    """
     try:
         func = getattr(data_frame, f'to_{file_type}')
 

@@ -79,7 +79,7 @@ class FeatureEngineeringPipeline():
                 logging.error(err)
                 return None
         except Exception as err:
-            
+
             return generic_reader(self.input_path)
     @staticmethod
     def replace_column_with_value(data_frame: pd.DataFrame,
@@ -197,9 +197,12 @@ class FeatureEngineeringPipeline():
             data_frame['Item_MRP'] = pd.qcut(
                 data_frame['Item_MRP'], 4, labels=[1, 2, 3, 4], duplicates= 'drop')
         except:
-            quantiles = [(31.288999999999998, 94.012) , (94.012, 142.247) , (142.247, 185.856), (185.856, 266.888)]
+            quantiles = [(31.288999999999998, 94.012),
+                         (94.012, 142.247),
+                         (142.247, 185.856),
+                         (185.856, 266.888)]
             for i in range(len(quantiles)):
-             
+
                 if data_frame['Item_MRP'].values < quantiles[i][1]:
                     data_frame['Item_MRP'] = i + 1
                     break
@@ -238,12 +241,15 @@ class FeatureEngineeringPipeline():
 
             df_train = df_train.drop(['Set'], axis=1)
             df_test = df_test.drop(['Item_Outlet_Sales', 'Set'], axis=1)
-            
-            generic_file_saver(df_train, self.file_type, self.output_path + f'train_final.{self.file_type}')
-            generic_file_saver(df_test, self.file_type, self.output_path + f'test_final.{self.file_type}')
+
+            generic_file_saver(df_train, self.file_type
+                               , self.output_path + f'train_final.{self.file_type}')
+            generic_file_saver(df_test, self.file_type
+                               , self.output_path + f'test_final.{self.file_type}')
         except Exception as err:
-            
-            generic_file_saver(dataset, self.file_type, self.output_path + f'_example.{self.file_type}')
+            logging.error(err)
+            generic_file_saver(dataset, self.file_type
+                               , self.output_path + f'_example.{self.file_type}')
 
     def run(self):
         """
@@ -264,7 +270,7 @@ class FeatureEngineeringPipeline():
         logging.info('Writing data...')
 
         self.write_prepared_data(df_transformed)
-      
+
         logging.info('Process finished')
 
 
@@ -302,7 +308,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
+
     FeatureEngineeringPipeline(input_path=args.input_path,
                                output_path=args.output_path,
                                file_type = args.file_type

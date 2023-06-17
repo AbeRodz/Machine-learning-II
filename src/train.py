@@ -1,11 +1,12 @@
 """
 train.py
 
-COMPLETAR DOCSTRING
+For executing the standalone script run :
+    python train.py -i ../data/output/ -o ../model/
 
-DESCRIPCIÓN:
-AUTOR:
-FECHA:
+DESCRIPCIÓN: Script para entrenar el modelo.
+AUTOR: Abraham Rodriguez
+FECHA: 17/06/2023
 """
 
 # Imports
@@ -48,7 +49,7 @@ class ModelTrainingPipeline():
         """
         Reads data from the specified input_path.
 
-        :return Dataframe 
+        :return Dataframe
         :rtype: pd.DataFrame
         """
 
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Script that executes model training,and saves it onto the specified output path")
+    description="Script that executes model training,and saves it onto the specified output path")
 
     parser.add_argument(
         "-i",
@@ -161,5 +162,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     ModelTrainingPipeline(input_path='../data/output/',
                           model_path='../model/').run()
-
-#python train.py -i ../data/output/ -o ../model/        
+    

@@ -3,7 +3,7 @@ subprocess.run(['Python', 'feature_engineering.py' ,'-i ../Notebook/example.json
 
 # uncomment to run with test_final.csv
 # subprocess.run(['Python', 'predict.py','-i ../data/output/test_final.csv',
-#                  '-o ../model/output/predictions_inference', '-m ../model/'])
+#                  '-o ../model/output/', '-m ../model/'])
 
 # run to test with generated csv from example.json 
 subprocess.run(['Python', 'predict.py','-i ../data/output/feature_engineering_example.csv',
